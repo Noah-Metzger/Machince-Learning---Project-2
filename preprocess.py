@@ -133,6 +133,10 @@ class Preprocessor:
                     for index, value in self.df[col].items():
                         if i == value:
                             temp[index] = 1
+                    print(self.df)
+                    print(col)
+                    print(i)
+                    print(temp)
                     self.df.insert(col, i, temp)
                 self.df.drop(self.df.columns[[col + len(labels)]], axis=1, inplace=True)
 
