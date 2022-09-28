@@ -117,7 +117,8 @@ class Preprocessor:
         One hot encodes all categorical attributes
         """
         # Makes a list of all unique the values in each column
-        for col in self.df:
+        addedFeatures = 0
+        for colIndex, col in enumerate(self.df):
             if type(self.df[col][0]) == str:
                 labels = []
                 for index, value in self.df[col].items():
@@ -133,12 +134,12 @@ class Preprocessor:
                     for index, value in self.df[col].items():
                         if i == value:
                             temp[index] = 1
-                    print(self.df)
-                    print(col)
-                    print(i)
-                    print(temp)
-                    self.df.insert(col, i, temp)
-                self.df.drop(self.df.columns[[col + len(labels)]], axis=1, inplace=True)
+                    self.df.insert(colIndex, i, temp)
+                oldindex = (colIndex + len(labels) + addedFeatures)
+                self.df.drop(self.df.columns[[oldindex]], axis=1, inplace=True)
+                addedFeatures += len(labels) - 1
+                self.truthColIndex += len(labels) - 1
+
 
     def binning(self, columns, BIN_NUMBER):
         """

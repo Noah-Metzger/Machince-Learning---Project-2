@@ -128,7 +128,7 @@ class Evaluation:
             else:
                 prec.append((TP[i]) / (TP[i] + FP[i]))
 
-        self.printResults("precision", prec)
+        # self.printResults("precision", prec)
         return prec
 
     def recall(self):
@@ -150,7 +150,7 @@ class Evaluation:
             else:
                 rec.append((TP[i]) / (TP[i] + FN[i]))
 
-        self.printResults("recall", rec)
+        # self.printResults("recall", rec)
         return rec
 
     def fscore(self, b):
