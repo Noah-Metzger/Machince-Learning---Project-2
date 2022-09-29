@@ -121,22 +121,22 @@ if __name__ == '__main__':
     forestfires = Preprocessor(copy.copy(fires), 12, "Forest Fires")
     forestfires.onehotencoding()
 
-    # folds = np.array_split(forestfires.df, 10)
-    # train = pd.DataFrame()
-    # test = pd.DataFrame()
-    # for i, fold in enumerate(folds):
-    #     if i == 0:
-    #         test = test.append(fold)
-    #     else:
-    #         train = train.append(fold)
-    # train_y = train[forestfires.df.columns[forestfires.truthColIndex]]
-    # train.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
-    # test_y = test[forestfires.df.columns[forestfires.truthColIndex]]
-    # test.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
-    knn = KNN(forestfires.df, test, test_y, train, train_y, 5, forestfires.truthColIndex)
-    knn.Kmeans(3, 20)
-    # print(knn.knnRegular(False, 1))
-    print(knn.knnEdited(False, 1, 2))
+    folds = np.array_split(forestfires.df, 10)
+    train = pd.DataFrame()
+    test = pd.DataFrame()
+    for i, fold in enumerate(folds):
+        if i == 0:
+            test = test.append(fold)
+        else:
+            train = train.append(fold)
+    train_y = train[forestfires.df.columns[forestfires.truthColIndex]]
+    train.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
+    test_y = test[forestfires.df.columns[forestfires.truthColIndex]]
+    test.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
+    knn = KNN(forestfires.df, test, test_y, train, train_y, forestfires.truthColIndex)
+    # knn.Kmeans(3, 20)
+    print(knn.knnRegular(5, False, 1))
+    print(knn.knnEdited(5, False, 1, 2))
 
     #Each dataset is put into a Preprocessor object before classification
     #A dataset is not preprocessed unless a method has been explicit called on the Preprocessor object.

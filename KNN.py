@@ -188,7 +188,7 @@ class KNN:
             if not isClassification:
                 whole = [False, True]
                 e = Evaluation(predicted, truth, whole)
-                newPreformance = e.precision() + e.recall()
+                newPreformance = sum(e.precision()) + sum(e.recall())
             else:
                 e = Evaluation(predicted, truth, self.df[self.df.columns[self.truthIndex]])
                 newPreformance = sum(e.precision()) + sum(e.recall())
