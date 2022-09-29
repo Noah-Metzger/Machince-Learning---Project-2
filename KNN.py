@@ -5,7 +5,7 @@ import copy
 from evaluation import *
 
 class KNN:
-    def __init__(self, df, test, test_y, train, train_y, k, truth):
+    def __init__(self, df, test, test_y, train, train_y, truth):
         """
         Constructor for KNN class
 
@@ -22,7 +22,6 @@ class KNN:
         self.test_y = test_y
         self.train = train
         self.train_y = train_y
-        self.k = k
         self.truthIndex = truth
 
     def lpNorm(self, x, y, p):
@@ -52,7 +51,7 @@ class KNN:
         r = 1 / (2 * sigma)
         return math.exp(-r * self.lpNorm(x, y, 2))
 
-    def predictInstance(self, testInstance, testTruth, trainingSet, trainingTruth, isClassification, bandwidth, isEditedKNN, error):
+    def predictInstance(self, k, testInstance, testTruth, trainingSet, trainingTruth, isClassification, bandwidth, isEditedKNN, error):
         """
         Predicts the class category or values of a single instance of a dataset
 
@@ -85,8 +84,8 @@ class KNN:
                     indices[j], indices[j + 1] = indices[j + 1], indices[j]
 
         #Reduce the distance and index array to only contain the k-nearest neighbors
-        nearestNeighbors = classes[:self.k]
-        nearestIndices = indices[:self.k]
+        nearestNeighbors = classes[:k]
+        nearestIndices = indices[:k]
 
         #If is classification problem
         if isClassification:
@@ -130,7 +129,7 @@ class KNN:
 
             return predictedValue
 
-    def knnRegular(self, isClassification, bandwidth):
+    def knnRegular(self, k, isClassification, bandwidth):
         """
         Normal KNN algoritm for both classification and regression
 
@@ -142,11 +141,11 @@ class KNN:
         predictions = []
         #Iterate through each instance in a test set and run KNN
         for i, testRow in self.test.iterrows():
-            predictions.append(self.predictInstance(testRow, self.test_y[i], self.train, self.train_y,isClassification, bandwidth, False, 0))
+            predictions.append(self.predictInstance(k, testRow, self.test_y[i], self.train, self.train_y,isClassification, bandwidth, False, 0))
             truth.append(self.test_y[i])
         return [predictions, truth]
 
-    def knnEdited(self, isClassification, bandwidth, error):
+    def knnEdited(self, k, isClassification, bandwidth, error):
         """
         Edited KNN algorithm
 
@@ -170,7 +169,7 @@ class KNN:
                 train = rest.drop(rest.columns[self.truthIndex], axis=1)
                 test_y = test_row[self.truthIndex]
                 test = np.array(list(test_row)[:self.truthIndex])
-                predictedResponse = self.predictInstance(test, test_y, train, train_y, isClassification, bandwidth, True, error)
+                predictedResponse = self.predictInstance(k, test, test_y, train, train_y, isClassification, bandwidth, True, error)
 
                 #If predicted class/value incorrect then remove instance from the dataset, and continue the loop to the next dataset
                 if not predictedResponse[1]:
@@ -241,10 +240,12 @@ class KNN:
                     avgInst[i] /= len(cluster)
                 centers[index] = avgInst
 
-        #once loop complete, return array with a cluster labels.
-        output = [-1] * len(self.df)
+        #once loop complete, return array of cluster centeriods.
+        output = []
         for i, cluster in enumerate(finalClusters):
+            temp = pd.DataFrame()
             for j in cluster:
-                output[j] = i
+                temp = temp.append(df.loc[j])
+            output.append(temp)
 
         return output
