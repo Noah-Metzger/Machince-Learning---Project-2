@@ -1,6 +1,7 @@
 from preprocess import *
 from evaluation import *
 from execute import *
+from KNN import *
 from NaiveBayesProfessional import *
 import copy
 pd.options.mode.chained_assignment = None
@@ -111,85 +112,55 @@ def experiment(preproArr):
 
 if __name__ == '__main__':
     preProcessedArray = []
-    breastCancer = pd.read_csv("Data/breast-cancer-wisconsin.csv", header=None)
-    glass = pd.read_csv('Data/glass.csv', header=None)
-    houseVotes = pd.read_csv('Data/house-votes-84.csv', header=None)
-    iris = pd.read_csv('Data/iris.csv', header=None)
-    soyBean = pd.read_csv('Data/soybean-small.csv', header=None)
+#     breastCancer = pd.read_csv("Data/breast-cancer-wisconsin.csv", header=None)
+#     glass = pd.read_csv('Data/glass.csv', header=None)
+#     houseVotes = pd.read_csv('Data/house-votes-84.csv', header=None)
+#     iris = pd.read_csv('Data/iris.csv', header=None)
+#     soyBean = pd.read_csv('Data/soybean-small.csv', header=None)
+    fires = pd.read_csv('Data/forestfires.csv')
+    forestfires = Preprocessor(copy.copy(fires), 12, "Forest Fires")
+    forestfires.onehotencoding()
+
+    folds = np.array_split(forestfires.df, 10)
+    train = pd.DataFrame()
+    test = pd.DataFrame()
+    for i, fold in enumerate(folds):
+        if i == 0:
+            test = test.append(fold)
+        else:
+            train = train.append(fold)
+    train_y = train[forestfires.df.columns[forestfires.truthColIndex]]
+    train.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
+    test_y = test[forestfires.df.columns[forestfires.truthColIndex]]
+    test.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
+    knn = KNN(forestfires.df, test, test_y, train, train_y, forestfires.truthColIndex)
+    # knn.Kmeans(3, 20)
+    print(knn.knnRegular(5, False, 1))
+    print(knn.knnEdited(5, False, 1, 2))
 
     #Each dataset is put into a Preprocessor object before classification
     #A dataset is not preprocessed unless a method has been explicit called on the Preprocessor object.
     #The creation of a preprocessor object does not imply that the dataset has been modified in any way.
 
     #Breast Cancer dataset without noise
-    breastCancerNoNoise = Preprocessor(copy.copy(breastCancer), 10, "Breast Cancer Wisconsin")
-    breastCancerNoNoise.deleteFeature(0)
-    breastCancerNoNoise.removesmissingvalues()
-    preProcessedArray.append(breastCancerNoNoise)
+#     print(fires)
+#
+#     folds = np.array_split(fires, 10)
+#     train = pd.DataFrame()
+#     test = pd.DataFrame()
+#     for i, fold in enumerate(folds):
+#         if i == 0:
+#             test = test.append(fold)
+#         else:
+#             train = train.append(fold)
+#     print(train)
+#
+#     train_y = train.iloc[12]
+#     train.drop([12], axis=1)
+#     test_y = test.iloc[12]
+#     test.drop([12], axis=1)
+#
+#     knn = KNN(fires, test, test_y, train, train_y, 5, 12)
+#     print(knn.knnRegular(True, 1))
+# #     preProcessedArray.append(breastCancerNoNoise)
 
-    # Breast Cancer dataset with noise
-    breastCancerNoise = Preprocessor(copy.copy(breastCancer), 10, "Breast Cancer Wisconsin - Noise Introduced")
-    breastCancerNoise.deleteFeature(0)
-    breastCancerNoise.removesmissingvalues()
-    breastCancerNoise.shuffle()
-    preProcessedArray.append(breastCancerNoise)
-
-    #Tuning hyper-parameter for number of bins for glass dataset
-    arr1 = []
-    for i in range(7,22):
-        glassTune = Preprocessor(copy.copy(glass), 10, "Glass Tuning")
-        glassTune.deleteFeature(0)
-        arr1.append(glassTune)
-    tune(arr1, 3, list(range(1, 9)))
-
-    #Glass dataset without noise
-    glassNoNoise = Preprocessor(copy.copy(glass), 10, "Glass")
-    glassNoNoise.deleteFeature(0)
-    glassNoNoise.binning(list(range(1, 9)), 7)
-    preProcessedArray.append(glassNoNoise)
-
-    #Glass dataset with noise
-    glassNoise = Preprocessor(copy.copy(glass), 10, "Glass - Noise Introduced")
-    glassNoise.deleteFeature(0)
-    glassNoise.binning(list(range(1, 9)), 7)
-    glassNoise.shuffle()
-    preProcessedArray.append(glassNoise)
-
-    #House votes dataset without noise
-    houseVotesNoNoise = Preprocessor(copy.copy(houseVotes), 0, "House Votes 84")
-    preProcessedArray.append(houseVotesNoNoise)
-
-    #House votes dataset with noise
-    houseVotesNoise = Preprocessor(copy.copy(houseVotes), 0, "House Votes 84 - Noise Introduced")
-    houseVotesNoise.shuffle()
-    preProcessedArray.append(houseVotesNoise)
-
-    #Tuning hyper-parameter for number of bins for Iris dataset
-    arr = []
-    for i in range(3,10):
-        irisTune = Preprocessor(copy.copy(iris), 4, "Iris Tuning")
-        arr.append(irisTune)
-    tune(arr, 3, [0, 1, 2, 3])
-
-    #Iris dataset without noise
-    irisNoNoise = Preprocessor(copy.copy(iris), 4, "Iris")
-    irisNoNoise.binning([0, 1, 2, 3], 6)
-    preProcessedArray.append(irisNoNoise)
-
-    #Iris dataset with noise
-    irisNoise = Preprocessor(copy.copy(iris), 4, "Iris - Noise Introduced")
-    irisNoise.binning([0, 1, 2, 3], 6)
-    irisNoise.shuffle()
-    preProcessedArray.append(copy.copy(irisNoise))
-
-    #Soy bean dataset without noise
-    soyBeanNoNoise = Preprocessor(copy.copy(soyBean), 35, "Soy bean")
-    preProcessedArray.append(soyBeanNoNoise)
-
-    #Soy bean dataset with noise
-    soyBeanNoise = Preprocessor(copy.copy(soyBean), 35, "Soy bean - Noise Introduced")
-    soyBeanNoise.shuffle()
-    preProcessedArray.append(soyBeanNoise)
-
-    #Passes array of all 10 different datasets to run experiment
-    experiment(preProcessedArray)
