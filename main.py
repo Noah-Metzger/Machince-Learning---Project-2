@@ -134,9 +134,10 @@ if __name__ == '__main__':
     test_y = test[forestfires.df.columns[forestfires.truthColIndex]]
     test.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
     knn = KNN(forestfires.df, test, test_y, train, train_y, forestfires.truthColIndex)
+    results = knn.knnRegular(5, False, 1)
     # knn.Kmeans(3, 20)
-    print(knn.knnRegular(5, False, 1))
-    print(knn.knnEdited(5, False, 1, 2))
+    e = Evaluation(results[0], results[1], [0])
+    print(e.getAverageError())
 
     #Each dataset is put into a Preprocessor object before classification
     #A dataset is not preprocessed unless a method has been explicit called on the Preprocessor object.
