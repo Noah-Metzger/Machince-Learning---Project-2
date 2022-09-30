@@ -4,8 +4,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-
-class preproccesor:
+class strat:
     
     def stratification(self,data,index,nFold):
         """
