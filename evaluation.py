@@ -8,9 +8,9 @@ class Evaluation:
         """
         Constructor for Evaluation class.  All classification evaluation logic is applied to the evaluation object.
 
-        :param df: data table
         :param pred: Predicted classification
         :param truth: Ground truth classification
+        :param whole: The entire ground truth feature, NOT from just training or test set
         """
 
         self.pred = pred
@@ -28,6 +28,13 @@ class Evaluation:
         """
 
         return list(np.unique(col))
+
+    def getAverageError(self):
+        errorSum = 0
+        for i in range(len(self.pred)):
+            errorSum += abs(self.pred[i] - self.truth[i])
+        errorSum /= len(self.pred)
+        return errorSum
 
     def printConfusionMatrix(self):
         matrix = self.getconfusionmatrix()
