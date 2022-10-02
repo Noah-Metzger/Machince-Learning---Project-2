@@ -18,7 +18,7 @@ class experiment_pipeline:
     
     
     
-    def clean(self,data,index,name,isClassification):
+    def clean(self,data,index,name,isClassification,nFold):
         """
         clean's raw data file, splits data into to tune & test/train of 10/ 90 percent. Builds a stratified dataset
 
@@ -37,20 +37,22 @@ class experiment_pipeline:
         
         # remove missing values
         prePro = Preprocessor(data,index,name)
-        prePro.removemissingvalues() 
-        data = prePro.df
+        prePro.removesmissingvalues() 
+        cln_data = prePro.df
+        
         
         # split into train/test and tune df's
-        self.tune_df = data.sample(frac=0.1,random_state=200)
-        self.data = data.drop(tune_df.index)
+        self.tune_df = cln_data.sample(frac=0.1,random_state=200)
+        self.cln_data = cln_data.drop(self.tune_df.index)
+        
         
         # initialize stratification object
         st = strat()
         
         if(isClassification):
-            self.stratified_data = st.stratification(data,index,nFold)
+            self.stratified_data = st.stratification(cln_data,index,nFold)
         else:
-            self.stratified_data = st.stratification_regression(data,index,Nfold)
+            self.stratified_data = st.stratification_regression(cln_data,index,Nfold)
         
     
     def tuning(self,index,isClassification):
@@ -109,4 +111,6 @@ class experiment_pipeline:
             results.append(func(train, train_response, test, test_response))
 
         return results
+    
+
     
