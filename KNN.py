@@ -36,7 +36,7 @@ class KNN:
 
         sums = 0
         for i in range(len(x)):
-            sums += pow(int(x[i]) - int(y[i]), p)
+            sums += pow(float(x[i]) - float(y[i]), p)
         return pow(sums, (1 / p))
 
     def RBF(self, x, y, sigma):
@@ -49,7 +49,9 @@ class KNN:
         :return: RBF distance
         """
         r = 1 / (2 * sigma)
-        return math.exp(-r * self.lpNorm(x, y, 2))
+        out = math.exp(-r * self.lpNorm(x, y, 2))
+#         print(out)
+        return out
 
     def predictInstance(self, k, testInstance, testTruth, trainingSet, trainingTruth, isClassification, bandwidth, isEditedKNN, error):
         """
@@ -114,8 +116,9 @@ class KNN:
             nom = 0
             dom = 0
             #Apply the Gaussian kernel smoother to all predicted values
+#             print(trainingSet)
             for i in nearestIndices:
-                kern = self.RBF(trainingSet.loc[i], testInstance, bandwidth)
+                kern = self.RBF(np.array(trainingSet.loc[i]), np.array(testInstance), bandwidth)
                 nom += kern * trainingTruth[i]
                 dom += kern
             predictedValue = (nom / dom)
@@ -143,6 +146,7 @@ class KNN:
         predictions = []
         #Iterate through each instance in a test set and run KNN
         for i, testRow in self.test.iterrows():
+            print(i)
             predictions.append(self.predictInstance(k, testRow, self.test_y[i], self.train, self.train_y,isClassification, bandwidth, False, 0))
             truth.append(self.test_y[i])
         return [predictions, truth]
