@@ -45,6 +45,11 @@ class experiment_pipeline:
         self.tune_df = cln_data.sample(frac=0.1,random_state=200)
         self.cln_data = cln_data.drop(self.tune_df.index)
         
+        # split into train_x, train_y, test_x, test_y for tuning process
+        self.train_x = self.cln_data.drop(self.cln_data.columns[[0,index]],axis = 1)
+        self.train_y = self.cln_data[index]
+        self.test_x = self.tune_df.drop(ep.tune_df.columns[[0, index]],axis = 1)
+        self.test_y = self.tune_df[index]
         
         # initialize stratification object
         st = strat()
@@ -52,7 +57,7 @@ class experiment_pipeline:
         if(isClassification):
             self.stratified_data = st.stratification(cln_data,index,nFold)
         else:
-            self.stratified_data = st.stratification_regression(cln_data,index,Nfold)
+            self.stratified_data = st.stratification_regression(cln_data,index,nFold)
         
     
     def tuning(self,index,isClassification):
@@ -67,25 +72,57 @@ class experiment_pipeline:
         
         # Hyperparameter Ranges
         
-        k = [1,2,3,4,5]
+        k_range = [1,2,3,4,5]
         bandwidth = [1,2,3,4,5]
         
-        knn_model = KNN(self.data,self.data.columns[0:index],self.data.columns[index],self.tune_df.columns[0:index],self.tune_df.columns[index],index)
+        knn_model = KNN(self.cln_data,self.train_x,self.train_y,self.test_x,self.test_y,index)
         
         for k in k_range:
+            
             if(isClassification):
                 # Knn
                 prediction = knn_model.knnRegular(k,isClassification,bandwidth)
-                ev = Evaluation(prediction[0],prediction[1],self.tune_df.columns[index] )
-                parameter_matrix.append([k,(ev.precision+ev.recall)])
+                
+                # Evaluate Performance
+                ev = Evaluation(prediction[0],prediction[1],self.cln_data[index] )
+                precision_list = ev.precision()
+                recall_list = ev.recall()
+                
+                # Average Percsion and Recall across groundtruths
+                precision = 0
+                recall = 0
+                for ind in range(len(precision_list)):
+                    precision += precision_list[ind]
+                    recall += recall_list[ind]
+                
+                precision = precision /len(precision_list)
+                recall = recall /  len(recall_list)
+                
+                # append to matrix
+                parameter_matrix.append([precision+recall,k])
             else:
-                for bdn in bandwidth:
+                for bnd in bandwidth:
+                    print(bnd)
+                       
                     prediction = knn_model.knnRegular(k,isClassification,bnd)
-                    ev = Evaluation(prediction[0],prediction[1],self.tune_df.columns[index])
-                    parameter_matrix.append([k,bnd,(ev.precision+ev.recall)])
-         
-         
-                    
+                    # Evaluate Performance
+                    ev = Evaluation(prediction[0],prediction[1],self.cln_data[index] )
+                                               
+                    parameter_matrix.append([ev.getAverageError(),k,bnd])
+        
+        # find index of best performing hyperparameter
+        tmp = []
+        for g in parameter_matrix:
+            tmp.append(g[0])
+            
+            
+        max_index = np.argmax(tmp)
+        
+        if(isClassification):
+            
+            return(parameter_matrix[max_index][1])
+        else:
+            return(parameter_matrix)
                               
     def crossvalidation(self,func,index):
         results = []
@@ -112,5 +149,21 @@ class experiment_pipeline:
 
         return results
     
+data = pd.read_csv("Data/abalone.csv",header=None)
 
+ep = experiment_pipeline()
+
+ep.clean(data,8,"name",False,10)
+
+index = 8
+
+#prePro = Preprocessor(data,index,'name')
+#prePro.removesmissingvalues() 
+#cln_data = prePro.df
+
+    
+kn = KNN(ep.cln_data,ep.cln_data.drop(ep.cln_data.columns[[0, 8]],axis = 1),ep.cln_data[index],ep.tune_df.drop(ep.tune_df.columns[[0, 8]],axis = 1),ep.tune_df[index],index)
+kn.knnRegular(5, False, 2)
+
+#print(ep.tuning(index, False))
     
