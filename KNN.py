@@ -36,7 +36,7 @@ class KNN:
 
         sums = 0
         for i in range(len(x)):
-            sums += pow(x[i] - y[i], p)
+            sums += pow(int(x[i]) - int(y[i]), p)
         return pow(sums, (1 / p))
 
     def RBF(self, x, y, sigma):
@@ -119,6 +119,8 @@ class KNN:
                 nom += kern * trainingTruth[i]
                 dom += kern
             predictedValue = (nom / dom)
+            if dom == 0:
+                predictedValue = 0
             #If edited KNN problem
             if isEditedKNN:
                 #if predicted value
