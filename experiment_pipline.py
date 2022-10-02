@@ -8,6 +8,15 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class experiment_pipeline:
+    
+    def __init__(self, data, isClassification, index, nFold):
+        
+        self.data = data
+        self.isClassification = isClassification
+        self.index = index
+        self.nFold = nFold
+        
+        
     # clean, Split into train/test and Tune, 
     # Tuning method
     # cross validation method
@@ -18,7 +27,7 @@ class experiment_pipeline:
     
     
     
-    def clean(self,data,index,name,isClassification,nFold):
+    def clean(self,name):
         """
         clean's raw data file, splits data into to tune & test/train of 10/ 90 percent. Builds a stratified dataset
 
@@ -33,34 +42,32 @@ class experiment_pipeline:
         -------
         None.
 
-        """
-        
+        """     
         # remove missing values
-        prePro = Preprocessor(data,index,name)
+        prePro = Preprocessor(self.data,self.index,name)
         prePro.removesmissingvalues() 
         cln_data = prePro.df
-        
-        
+               
         # split into train/test and tune df's
         self.tune_df = cln_data.sample(frac=0.1,random_state=200)
         self.cln_data = cln_data.drop(self.tune_df.index)
         
         # split into train_x, train_y, test_x, test_y for tuning process
-        self.train_x = self.cln_data.drop(self.cln_data.columns[[0,index]],axis = 1)
-        self.train_y = self.cln_data[index]
-        self.test_x = self.tune_df.drop(ep.tune_df.columns[[0, index]],axis = 1)
-        self.test_y = self.tune_df[index]
+        self.train_x = self.cln_data.drop(self.cln_data.columns[[0,self.index]],axis = 1) ### watch out for zero!!!!!!!!!!
+        self.train_y = self.cln_data[self.index]
+        self.test_x = self.tune_df.drop(ep.tune_df.columns[[0, self.index]],axis = 1) ### watch out for zero!!!!!!!!!!!!
+        self.test_y = self.tune_df[self.index]
         
         # initialize stratification object
         st = strat()
         
-        if(isClassification):
-            self.stratified_data = st.stratification(cln_data,index,nFold)
+        if(self.isClassification):
+            self.stratified_data = st.stratification(self.cln_data,self.index,self.nFold)
         else:
-            self.stratified_data = st.stratification_regression(cln_data,index,nFold)
+            self.stratified_data = st.stratification_regression(self.cln_data,self.index,self.nFold)
         
     
-    def tuning(self,index,isClassification):
+    def tuning(self):
         
         # hp k[always odd] range - % of observations, bandwidth(regression - kernel func) range - , error(edited knn)
         # 100 for maxiter
@@ -75,16 +82,16 @@ class experiment_pipeline:
         k_range = [1,2,3,4,5]
         bandwidth = [1,2,3,4,5]
         
-        knn_model = KNN(self.cln_data,self.train_x,self.train_y,self.test_x,self.test_y,index)
+        knn_model = KNN(self.cln_data,self.train_x,self.train_y,self.test_x,self.test_y,self.index)
         
         for k in k_range:
             
-            if(isClassification):
+            if(self.isClassification):
                 # Knn
-                prediction = knn_model.knnRegular(k,isClassification,bandwidth)
+                prediction = knn_model.knnRegular(k,self.isClassification,bandwidth)
                 
                 # Evaluate Performance
-                ev = Evaluation(prediction[0],prediction[1],self.cln_data[index] )
+                ev = Evaluation(prediction[0],prediction[1],self.cln_data[self.index] )
                 precision_list = ev.precision()
                 recall_list = ev.recall()
                 
@@ -104,7 +111,7 @@ class experiment_pipeline:
                 for bnd in bandwidth:
                     print(bnd)
                        
-                    prediction = knn_model.knnRegular(k,isClassification,bnd)
+                    prediction = knn_model.knnRegular(k,self.isClassification,bnd)
                     # Evaluate Performance
                     ev = Evaluation(prediction[0],prediction[1],self.cln_data[index] )
                                                
@@ -118,7 +125,7 @@ class experiment_pipeline:
             
         max_index = np.argmax(tmp)
         
-        if(isClassification):
+        if(self.isClassification):
             
             return(parameter_matrix[max_index][1])
         else:
@@ -149,21 +156,15 @@ class experiment_pipeline:
 
         return results
     
-data = pd.read_csv("Data/abalone.csv",header=None)
+data = pd.read_csv("Data/breast-cancer-wisconsin.csv",header=None)
 
-ep = experiment_pipeline()
+ep = experiment_pipeline(data,True,10,10)
 
-ep.clean(data,8,"name",False,10)
+ep.clean("name")
 
-index = 8
+#index = 8  
+#kn = KNN(ep.cln_data,ep.cln_data.drop(ep.cln_data.columns[[0, 8]],axis = 1),ep.cln_data[index],ep.tune_df.drop(ep.tune_df.columns[[0, 8]],axis = 1),ep.tune_df[index],index)
+#kn.knnRegular(5, False, 2)
 
-#prePro = Preprocessor(data,index,'name')
-#prePro.removesmissingvalues() 
-#cln_data = prePro.df
-
-    
-kn = KNN(ep.cln_data,ep.cln_data.drop(ep.cln_data.columns[[0, 8]],axis = 1),ep.cln_data[index],ep.tune_df.drop(ep.tune_df.columns[[0, 8]],axis = 1),ep.tune_df[index],index)
-kn.knnRegular(5, False, 2)
-
-#print(ep.tuning(index, False))
+print(ep.tuning())
     
