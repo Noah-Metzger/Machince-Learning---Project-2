@@ -146,7 +146,7 @@ class KNN:
         predictions = []
         #Iterate through each instance in a test set and run KNN
         for i, testRow in self.test.iterrows():
-            print(i)
+            
             predictions.append(self.predictInstance(k, testRow, self.test_y[i], self.train, self.train_y,isClassification, bandwidth, False, 0))
             truth.append(self.test_y[i])
         return [predictions, truth]
