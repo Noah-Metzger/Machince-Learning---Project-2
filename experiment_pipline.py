@@ -28,7 +28,7 @@ class experiment_pipeline:
     
     
     
-    def clean(self,name):
+    def clean(self,name, prePro):
         """
         clean's raw data file, splits data into to tune & test/train of 10/ 90 percent. Builds a stratified dataset
 
@@ -45,8 +45,6 @@ class experiment_pipeline:
 
         """     
         # remove missing values
-        prePro = Preprocessor(self.data,self.index,name)
-        prePro.removesmissingvalues() 
         cln_data = prePro.df
                
         # split into train/test and tune df's
@@ -200,15 +198,15 @@ class experiment_pipeline:
 
         return results
     
-data = pd.read_csv("Data/breast-cancer-wisconsin.csv",header=None)
-
-ep = experiment_pipeline(data,False,10,10)
-
-ep.clean("name")
-
-#index = 8  
-#kn = KNN(ep.cln_data,ep.cln_data.drop(ep.cln_data.columns[[0, 8]],axis = 1),ep.cln_data[index],ep.tune_df.drop(ep.tune_df.columns[[0, 8]],axis = 1),ep.tune_df[index],index)
-#kn.knnRegular(5, False, 2)
-print(ep.editedknn_tuning(3, .25))
-#ep.editedknn_tuning()
-    
+# data = pd.read_csv("Data/breast-cancer-wisconsin.csv",header=None)
+#
+# ep = experiment_pipeline(data,False,10,10)
+#
+# ep.clean("name")
+#
+# #index = 8
+# #kn = KNN(ep.cln_data,ep.cln_data.drop(ep.cln_data.columns[[0, 8]],axis = 1),ep.cln_data[index],ep.tune_df.drop(ep.tune_df.columns[[0, 8]],axis = 1),ep.tune_df[index],index)
+# #kn.knnRegular(5, False, 2)
+# print(ep.editedknn_tuning(3, .25))
+# #ep.editedknn_tuning()
+#

@@ -111,57 +111,45 @@ def experiment(preproArr):
     #Prints scatter plots
 
 if __name__ == '__main__':
-    preProcessedArray = []
-#     breastCancer = pd.read_csv("Data/breast-cancer-wisconsin.csv", header=None)
-#     glass = pd.read_csv('Data/glass.csv', header=None)
-#     houseVotes = pd.read_csv('Data/house-votes-84.csv', header=None)
-#     iris = pd.read_csv('Data/iris.csv', header=None)
-#     soyBean = pd.read_csv('Data/soybean-small.csv', header=None)
-    fires = pd.read_csv('Data/forestfires.csv')
-    forestfires = Preprocessor(copy.copy(fires), 12, "Forest Fires")
-    forestfires.onehotencoding()
+    exPipe = []
+    abalone = pd.read_csv("Data/abalone.csv", header=None)
+    breastCancer = pd.read_csv("Data/breast-cancer-wisconsin.csv", header=None)
+    forestFire = pd.read_csv("Data/forestfires.csv")
+    glass = pd.read_csv('Data/glass.csv', header=None)
+    machine = pd.read_csv('Data/machine.csv', header=None)
+    soyBean = pd.read_csv('Data/soybean-small.csv', header=None)
 
-    folds = np.array_split(forestfires.df, 10)
-    train = pd.DataFrame()
-    test = pd.DataFrame()
-    for i, fold in enumerate(folds):
-        if i == 0:
-            test = test.append(fold)
-        else:
-            train = train.append(fold)
-    train_y = train[forestfires.df.columns[forestfires.truthColIndex]]
-    train.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
-    test_y = test[forestfires.df.columns[forestfires.truthColIndex]]
-    test.drop(forestfires.df.columns[[forestfires.truthColIndex]], axis=1)
-    knn = KNN(forestfires.df, test, test_y, train, train_y, forestfires.truthColIndex)
-    results = knn.knnRegular(5, False, 1)
-    # knn.Kmeans(3, 20)
-    e = Evaluation(results[0], results[1], [0])
-    print(e.getAverageError())
+    abalonePre = Preprocessor(copy.copy(abalone), 8, "Abalone")
+    abalonePre.onehotencoding([0])
+    abaloneEx = experiment_pipline(abalonePre.df, False, abalonePre.truthColIndex, 10)
+    exPipe.append(abaloneEx)
 
-    #Each dataset is put into a Preprocessor object before classification
-    #A dataset is not preprocessed unless a method has been explicit called on the Preprocessor object.
-    #The creation of a preprocessor object does not imply that the dataset has been modified in any way.
+    breastCancerPre = Preprocessor(copy.copy(breastCancer), 10, "Breast Cancer Wisconsin")
+    breastCancerPre.removesmissingvalues()
+    breastCancerPre.deleteFeature(0)
+    breastCancerEx = experiment_pipline(breastCancerPre.df, False, breastCancerPre.truthColIndex, 10)
+    exPipe.append(breastCancerEx)
 
-    #Breast Cancer dataset without noise
-#     print(fires)
-#
-#     folds = np.array_split(fires, 10)
-#     train = pd.DataFrame()
-#     test = pd.DataFrame()
-#     for i, fold in enumerate(folds):
-#         if i == 0:
-#             test = test.append(fold)
-#         else:
-#             train = train.append(fold)
-#     print(train)
-#
-#     train_y = train.iloc[12]
-#     train.drop([12], axis=1)
-#     test_y = test.iloc[12]
-#     test.drop([12], axis=1)
-#
-#     knn = KNN(fires, test, test_y, train, train_y, 5, 12)
-#     print(knn.knnRegular(True, 1))
-# #     preProcessedArray.append(breastCancerNoNoise)
+    forestFirePre = Preprocessor(copy.copy(forestFire), 12, "Forest Fires")
+    forestFirePre.labelencodeOridinal(2, ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])
+    forestFirePre.labelencodeOridinal(3, ["mon", "tue", "wed", "thu", "fri", "sat", "sun"])
+    forestFireEx = experiment_pipline(forestFirePre.df, False, forestFirePre.truthColIndex, 10)
+    exPipe.append(forestFireEx)
 
+    glassPre = Preprocessor(copy.copy(glass), 10, "Glass")
+    glassPre.deleteFeature(0)
+    glassEx = experiment_pipline(glassPre.df, False, glassPre.truthColIndex, 10)
+    exPipe.append(glassEx)
+
+    machinePre = Preprocessor(copy.copy(machine), 9, "Machine")
+    machinePre.deleteFeature(0)
+    machinePre.deleteFeature(1)
+    machineEx = experiment_pipline(machinePre.df, False, machinePre.truthColIndex, 10)
+    exPipe.append(machineEx)
+
+    soyBeanPre = Preprocessor(copy.copy(soyBean), 35, "Soybean")
+    soyBeanEx = experiment_pipline(soyBeanPre.df, False, soyBeanPre.truthColIndex, 10)
+    exPipe.append(soyBeanEx)
+
+    for exObj in exPipe:
+        exObj.clean()

@@ -1,6 +1,5 @@
 import random
 import sys
-
 import pandas as pd
 import numpy as np
 import math
@@ -88,54 +87,62 @@ class Preprocessor:
                         else:
                             self.df[col][index] = self.df[col][index - 1]
 
-    def labelencode(self):
+    def labelencodeOridinal(self, colIndex, order):
+        col = self.df.columns[colIndex]
+        #Replaces the value with its index of the value in the unique values array
+        for index, value in self.df[col].items():
+            for i in order:
+                if i == value:
+                    self.df[col][index] = order.index(value) + 1
+
+    def labelencode(self, columnArray):
         """
         Label encodes all categorical attributes.
         """
         #Makes a list of all unique the values in each column
-        for col in self.df:
-            if type(self.df[col][0]) == str:
-                labels = []
-                for index, value in self.df[col].items():
-                    isDup = False
-                    for i in labels:
-                        if i == value:
-                            isDup = True
-                    if not isDup:
-                        labels.append(value)
-                #Replaces the value with its index of the value in the unique values array
-                for index, value in self.df[col].items():
-                    for i in labels:
-                        if i == value:
-                            self.df[col][index] = labels.index(value)
+        for l in columnArray:
+            col = self.df.columns[l]
+            labels = []
+            for index, value in self.df[col].items():
+                isDup = False
+                for i in labels:
+                    if i == value:
+                        isDup = True
+                if not isDup:
+                    labels.append(value)
+            #Replaces the value with its index of the value in the unique values array
+            for index, value in self.df[col].items():
+                for i in labels:
+                    if i == value:
+                        self.df[col][index] = labels.index(value)
 
-    def onehotencoding(self):
+    def onehotencoding(self, columnArray):
         """
         One hot encodes all categorical attributes
         """
         # Makes a list of all unique the values in each column
         addedFeatures = 0
-        for colIndex, col in enumerate(self.df):
-            if type(self.df[col][0]) == str:
-                labels = []
-                for index, value in self.df[col].items():
-                    isDup = False
-                    for i in labels:
-                        if i == value:
-                            isDup = True
-                    if not isDup:
-                        labels.append(value)
-                #Inserts a column for each unique value and inserts a 1 for each occurrance of that value and all else 0's
+        for l in columnArray:
+            col = self.df.columns[l]
+            labels = []
+            for index, value in self.df[col].items():
+                isDup = False
                 for i in labels:
-                    temp = np.zeros(self.df[col].size)
-                    for index, value in self.df[col].items():
-                        if i == value:
-                            temp[index] = 1
-                    self.df.insert(colIndex, i, temp)
-                oldindex = (colIndex + len(labels) + addedFeatures)
-                self.df.drop(self.df.columns[[oldindex]], axis=1, inplace=True)
-                addedFeatures += len(labels) - 1
-                self.truthColIndex += len(labels) - 1
+                    if i == value:
+                        isDup = True
+                if not isDup:
+                    labels.append(value)
+                #Inserts a column for each unique value and inserts a 1 for each occurrance of that value and all else 0's
+            for i in labels:
+                temp = np.zeros(self.df[col].size)
+                for index, value in self.df[col].items():
+                    if i == value:
+                        temp[index] = 1
+                self.df.insert(l, i, temp)
+            oldindex = (l + len(labels) + addedFeatures)
+            self.df.drop(self.df.columns[[oldindex]], axis=1, inplace=True)
+            addedFeatures += len(labels) - 1
+            self.truthColIndex += len(labels) - 1
 
 
     def binning(self, columns, BIN_NUMBER):
