@@ -167,30 +167,30 @@ if __name__ == '__main__':
         for fold in results:
 #             print(exObj.data.columns[exObj.index])
             e = Evaluation(fold[0], fold[1], np.array(exObj.data[exObj.data.columns[exObj.index]]))
-            if exObj.isClassification:
-                x1 = e.precision()
-                y1 = e.recall()
-                for i in range(len(x1)):
-                    x.append(x1[i])
-                    y.append(y1[i])
-            else:
-                x1 = e.MeanAbsoluteError()
-                y1 = e.RelativeAbsoluteError()
-                x.append(x1)
-                y.append(y1)
+#             if exObj.isClassification:
+#                 x1 = e.precision()
+#                 y1 = e.recall()
+#                 for i in range(len(x1)):
+#                     x.append(x1[i])
+#                     y.append(y1[i])
+#             else:
+#                 x1 = e.MeanAbsoluteError()
+#                 y1 = e.RelativeAbsoluteError()
+#                 x.append(x1)
+#                 y.append(y1)
 
-        if exObj.isClassification:
-            print()
-            print("Average precision: " + str(sum(x) / len(x)))
-            print("Average recall: " + str(sum(y) / len(y)))
-            print()
-            # ScatterPlot(np.array(x), "Precision", np.array(y), "Recall", exObj.Preprocessor.dfName + " KNN Classification")
-        else:
-            print()
-            print("Average Mean Absolute Error: " + str(sum(x) / len(x)))
-            print("Average Relative Absolute Error: " + str(sum(y) / len(y)))
-            print()
-            # ScatterPlot(np.array(x), "Mean Absolute Error", np.array(y), "Relative Absolute Error",exObj.Preprocessor.dfName + " KNN Regression")
+#         if exObj.isClassification:
+#             print()
+#             print("Average precision: " + str(sum(x) / len(x)))
+#             print("Average recall: " + str(sum(y) / len(y)))
+#             print()
+#             # ScatterPlot(np.array(x), "Precision", np.array(y), "Recall", exObj.Preprocessor.dfName + " KNN Classification")
+#         else:
+#             print()
+#             print("Average Mean Absolute Error: " + str(sum(x) / len(x)))
+#             print("Average Relative Absolute Error: " + str(sum(y) / len(y)))
+#             print()
+#             # ScatterPlot(np.array(x), "Mean Absolute Error", np.array(y), "Relative Absolute Error",exObj.Preprocessor.dfName + " KNN Regression")
 
         error = 0
         if not exObj.isClassification:

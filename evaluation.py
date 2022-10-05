@@ -74,6 +74,8 @@ class Evaluation:
 #             print(self.pred[i])
 #             print(self.pred)
 #             print(self.label)
+#             print(self.truth)
+#             print(self.truth[i])
 #             print(self.label.index(self.pred[i]))
 #             print(self.label.index(self.truth[i]))
             matrix[self.label.index(self.pred[i])][self.label.index(self.truth[i])] += 1

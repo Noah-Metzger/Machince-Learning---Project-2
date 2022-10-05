@@ -34,6 +34,8 @@ class KNN:
         :return: L_p norm distance between two points
         """
 
+        print(x)
+        print(y)
         sums = 0
         for i in range(len(x)):
             sums += pow(float(x[i]) - float(y[i]), p)
@@ -172,10 +174,10 @@ class KNN:
                 rest = df.drop(i, axis=0)
                 train_y = rest[rest.columns[self.truthIndex]]
                 train = rest.drop(rest.columns[self.truthIndex], axis=1)
-                test_y = test_row[self.truthIndex]
+                test_y = test_row[rest.columns[self.truthIndex]]
                 test = np.array(list(test_row)[:self.truthIndex])
                 predictedResponse = self.predictInstance(k, test, test_y, train, train_y, isClassification, bandwidth, True, error)
-                print(predictedResponse, isClassification)
+#                 print(predictedResponse, isClassification)
                 #If predicted class/value incorrect then remove instance from the dataset, and continue the loop to the next dataset
                 if not predictedResponse[1]:
                     df = df.drop([i])
@@ -195,6 +197,11 @@ class KNN:
                 e = Evaluation(predicted, truth, whole)
                 newPreformance = sum(e.precision()) + sum(e.recall())
             else:
+#                 print(predicted)
+#                 print(truth)
+#                 print(list(self.df[self.df.columns[self.truthIndex]]))
+#                 print(self.df.columns[self.truthIndex])
+#                 print(self.df)
                 e = Evaluation(predicted, truth, self.df[self.df.columns[self.truthIndex]])
                 newPreformance = sum(e.precision()) + sum(e.recall())
 
@@ -228,7 +235,7 @@ class KNN:
             for i, row in self.df.iterrows():
                 dist = []
                 for center in centers:
-                    dist.append(lpNorm(row, center, 2))
+                    dist.append(self.lpNorm(row, center, 2))
                 binn[np.argmin(np.array(dist))].append(i)
             finalClusters = binn
             #Finds the average point for each cluster and assigns the average point as the new cluster centers

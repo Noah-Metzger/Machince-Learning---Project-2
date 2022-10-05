@@ -120,7 +120,6 @@ class experiment_pipeline:
                     prediction = knn_model.knnRegular(k,self.isClassification,bnd)
                     # Evaluate Performance
                     ev = Evaluation(prediction[0],prediction[1],self.cln_data[self.cln_data.columns[self.index]] )
-                                               
                     parameter_matrix.append([ev.MeanAbsoluteError() + ev.RelativeAbsoluteError(),k,bnd])
         
         # find index of best performing hyperparameter
@@ -132,7 +131,6 @@ class experiment_pipeline:
         min_index = np.argmin(min)
         
         if(self.isClassification):
-            
             return(parameter_matrix[max_index][1])
         else:
             return(parameter_matrix[min_index][1],parameter_matrix[min_index][2])
