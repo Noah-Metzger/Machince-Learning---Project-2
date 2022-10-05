@@ -29,11 +29,27 @@ class Evaluation:
 
         return list(np.unique(col))
 
-    def getAverageError(self):
+    def MeanAbsoluteError(self):
         errorSum = 0
         for i in range(len(self.pred)):
             errorSum += abs(self.pred[i] - self.truth[i])
         errorSum /= len(self.pred)
+        return errorSum
+
+    def RelativeAbsoluteError(self):
+        meanTruth = 0
+        for i in range(len(self.truth)):
+            meanTruth += self.truth[i]
+        meanTruth /= len(self.truth)
+
+        nom = 0
+        dom = 0
+        for i in range(len(self.pred)):
+            nom += abs(self.pred[i] - self.truth[i])
+            nom += abs(self.pred[i] - meanTruth)
+        errorSum = nom/dom
+        if dom == 0:
+            errorSum = 0
         return errorSum
 
     def printConfusionMatrix(self):
@@ -55,6 +71,11 @@ class Evaluation:
         for i in range(len(self.label)):
             matrix.append([0] * len(self.label))
         for i in range(len(self.pred)):
+#             print(self.pred[i])
+#             print(self.pred)
+#             print(self.label)
+#             print(self.label.index(self.pred[i]))
+#             print(self.label.index(self.truth[i]))
             matrix[self.label.index(self.pred[i])][self.label.index(self.truth[i])] += 1
         return matrix
 
