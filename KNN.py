@@ -109,7 +109,7 @@ class KNN:
                 isSameClass = False
                 if predictedClass == testTruth:
                     isSameClass = True
-                return isSameClass
+                return [predictedClass, isSameClass]
             return predictedClass
         # If is regression problem
         else:
@@ -175,7 +175,7 @@ class KNN:
                 test_y = test_row[self.truthIndex]
                 test = np.array(list(test_row)[:self.truthIndex])
                 predictedResponse = self.predictInstance(k, test, test_y, train, train_y, isClassification, bandwidth, True, error)
-
+                print(predictedResponse, isClassification)
                 #If predicted class/value incorrect then remove instance from the dataset, and continue the loop to the next dataset
                 if not predictedResponse[1]:
                     df = df.drop([i])

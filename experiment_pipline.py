@@ -13,7 +13,7 @@ class experiment_pipeline:
         self.isClassification = isClassification
         self.index = index
         self.nFold = nFold
-        self.num_classes = len(np.unique(data[data.columns[index]]))
+        self.num_classes = len(np.unique(prePro.df[prePro.df.columns[index]]))
         self.Preprocessor = prePro
 
         
@@ -198,10 +198,24 @@ class experiment_pipeline:
 
         return results
 
-    def crossvalidationeditedknn(self, k, bandwidth, error):
-        knn = KNN(self.stratified_data, 0, 0, 0, 0)
+    def editedknn(self, k, bandwidth, error):
+        full = pd.DataFrame()
+        for j, fold in enumerate(self.stratified_data):
+            full = full.append(fold)
+        knn = KNN(full, 0, 0, 0, 0, self.index)
         result = knn.knnEdited(k, self.isClassification, bandwidth, error)
         return result
+
+    def kMeans(self, k):
+        full = pd.DataFrame()
+        for j, fold in enumerate(self.stratified_data):
+            full = full.append(fold)
+        kMeans = KNN(full, 0,0,0,0,self.index)
+        return kMeans.Kmeans(k, 100)
+
+
+
+
 
 # data = pd.read_csv("Data/breast-cancer-wisconsin.csv",header=None)
 #
