@@ -34,8 +34,6 @@ class KNN:
         :return: L_p norm distance between two points
         """
 
-        print(x)
-        print(y)
         sums = 0
         for i in range(len(x)):
             sums += pow(float(x[i]) - float(y[i]), p)
@@ -227,6 +225,7 @@ class KNN:
             centers.append(np.array(r))
 
         finalClusters = []
+        prevAvg = []
         for z in range(maxIter):
             binn = []
             for i in range(k):
@@ -235,21 +234,22 @@ class KNN:
             for i, row in self.df.iterrows():
                 dist = []
                 for center in centers:
-                    dist.append(self.lpNorm(row, center, 2))
+                    # print(np.array(row), np.array(center))
+                    dist.append(self.lpNorm(np.array(row), np.array(center), 2))
                 binn[np.argmin(np.array(dist))].append(i)
             finalClusters = binn
             #Finds the average point for each cluster and assigns the average point as the new cluster centers
             for index, cluster in enumerate(binn):
-                avgInst = np.empty([1, 1])
+                avgInst = np.zeros(len(row))
                 for i, inst in enumerate(cluster):
                     row = np.array(self.df.loc[inst])
-                    if i == 0:
-                        avgInst = row
-                    else:
-                        for j, val in enumerate(row):
-                            avgInst[j] += val
+                    for j, val in enumerate(row):
+                        avgInst[j] += float(val)
+
                 for i in range(len(avgInst)):
                     avgInst[i] /= len(cluster)
+                    if len(cluster) == 0:
+                        avgInst[i] = 0
                 centers[index] = avgInst
 
         #once loop complete, return array of cluster centeriods.
@@ -257,7 +257,7 @@ class KNN:
         for i, cluster in enumerate(finalClusters):
             temp = pd.DataFrame()
             for j in cluster:
-                temp = temp.append(df.loc[j])
+                temp = temp.append(self.df.loc[j])
             output.append(temp)
 
         return output

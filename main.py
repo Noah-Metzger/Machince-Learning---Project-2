@@ -124,17 +124,17 @@ if __name__ == '__main__':
 #     abaloneEx = experiment_pipeline(abalonePre.df, False, abalonePre.truthColIndex, 10, abalonePre)
 #     exPipe.append(abaloneEx)
 
-    breastCancerPre = Preprocessor(copy.copy(breastCancer), 10, "Breast Cancer Wisconsin")
-    breastCancerPre.removesmissingvalues()
-    breastCancerPre.deleteFeature(0)
-    breastCancerEx = experiment_pipeline(breastCancerPre.df, True, breastCancerPre.truthColIndex, 10, breastCancerPre)
-    exPipe.append(breastCancerEx)
+    # breastCancerPre = Preprocessor(copy.copy(breastCancer), 10, "Breast Cancer Wisconsin")
+    # breastCancerPre.removesmissingvalues()
+    # breastCancerPre.deleteFeature(0)
+    # breastCancerEx = experiment_pipeline(breastCancerPre.df, True, breastCancerPre.truthColIndex, 10, breastCancerPre)
+    # exPipe.append(breastCancerEx)
 #
-#     forestFirePre = Preprocessor(copy.copy(forestFire), 12, "Forest Fires")
-#     forestFirePre.labelencodeOridinal(2, ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])
-#     forestFirePre.labelencodeOridinal(3, ["mon", "tue", "wed", "thu", "fri", "sat", "sun"])
-#     forestFireEx = experiment_pipeline(forestFirePre.df, False, forestFirePre.truthColIndex, 10)
-# #     exPipe.append(forestFireEx)
+    forestFirePre = Preprocessor(copy.copy(forestFire), 12, "Forest Fires")
+    forestFirePre.labelencodeOridinal(2, ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])
+    forestFirePre.labelencodeOridinal(3, ["mon", "tue", "wed", "thu", "fri", "sat", "sun"])
+    forestFireEx = experiment_pipeline(forestFirePre.df, False, forestFirePre.truthColIndex, 10, forestFirePre)
+    exPipe.append(forestFireEx)
 #
 #     glassPre = Preprocessor(copy.copy(glass), 10, "Glass")
 #     glassPre.deleteFeature(0)
@@ -161,12 +161,12 @@ if __name__ == '__main__':
             k = regular[0]
             bandwidth = regular[1]
 
-        x = []
-        y = []
-        results = exObj.crossvalidationknnregular(k, bandwidth)
-        for fold in results:
+        # x = []
+        # y = []
+        # results = exObj.crossvalidationknnregular(k, bandwidth)
+        # for fold in results:
 #             print(exObj.data.columns[exObj.index])
-            e = Evaluation(fold[0], fold[1], np.array(exObj.data[exObj.data.columns[exObj.index]]))
+#             e = Evaluation(fold[0], fold[1], np.array(exObj.data[exObj.data.columns[exObj.index]]))
 #             if exObj.isClassification:
 #                 x1 = e.precision()
 #                 y1 = e.recall()
@@ -192,47 +192,45 @@ if __name__ == '__main__':
 #             print()
 #             # ScatterPlot(np.array(x), "Mean Absolute Error", np.array(y), "Relative Absolute Error",exObj.Preprocessor.dfName + " KNN Regression")
 
-        error = 0
-        if not exObj.isClassification:
+        if exObj.isClassification:
+            results = exObj.editedknn(5, 1, 1, exObj.data)
+        else:
             error = exObj.editedknn_tuning(k, bandwidth)
 
-        results = exObj.editedknn(k, bandwidth, error)
-        kClusters = len(results)
-        centeriods = exObj.kMeans(kClusters)
-        for cluster in centeriods:
-            reducedDataset = experiment_pipline(cluster, exObj.isClassification, exObj.index, exObj.nFold, exObj.Preprocessor)
-            x = []
-            y = []
-            results = reducedDataset.crossvalidationknnregular(k, bandwidth)
-            for fold in results:
-                e = Evaluation(fold[0], fold[1], np.array(reducedDataset.data[reducedDataset.data.columns[reducedDataset.index]]))
+            results = exObj.editedknn(k, bandwidth, error)
+            kClusters = len(results)
+            centeriods = exObj.kMeans(kClusters)
+
+            for cluster in centeriods:
+                reducedDataset = experiment_pipeline(cluster, exObj.isClassification, exObj.index, exObj.nFold, exObj.Preprocessor)
+                reducedDataset.clean()
+                x = []
+                y = []
+                results = reducedDataset.crossvalidationknnregular(k, bandwidth)
+                for fold in results:
+                    e = Evaluation(fold[0], fold[1], np.array(reducedDataset.data[reducedDataset.data.columns[reducedDataset.index]]))
+                    if reducedDataset.isClassification:
+                        x1 = e.precision()
+                        y1 = e.recall()
+                        for i in range(len(x1)):
+                            x.append(x1[i])
+                            y.append(y1[i])
+                    else:
+                        x1 = e.MeanAbsoluteError()
+                        y1 = e.RelativeAbsoluteError()
+                        x.append(x1)
+                        y.append(y1)
                 if reducedDataset.isClassification:
-                    x1 = e.precision()
-                    y1 = e.recall()
-                    for i in range(len(x1)):
-                        x.append(x1[i])
-                        y.append(y1[i])
+                    print()
+                    print("Average precision: " + str(sum(x) / len(x)))
+                    print("Average recall: " + str(sum(y) / len(y)))
+                    print()
+                    # ScatterPlot(np.array(x), "Precision", np.array(y), "Recall", reducedDataset.Preprocessor.dfName + " KNN Classification")
                 else:
-                    x1 = e.MeanAbsoluteError()
-                    y1 = e.RelativeAbsoluteError()
-                    x.append(x1)
-                    y.append(y1)
+                    print()
+                    print("Average Mean Absolute Error: " + str(sum(x) / len(x)))
+                    print("Average Relative Absolute Error: " + str(sum(y) / len(y)))
+                    print()
+                    # ScatterPlot(np.array(x), "Mean Absolute Error", np.array(y), "Relative Absolute Error", reducedDataset.Preprocessor.dfName + " KNN Regression")
 
-            if reducedDataset.isClassification:
-                print()
-                print("Average precision: " + str(sum(x) / len(x)))
-                print("Average recall: " + str(sum(y) / len(y)))
-                print()
-                # ScatterPlot(np.array(x), "Precision", np.array(y), "Recall", reducedDataset.Preprocessor.dfName + " KNN Classification")
-            else:
-                print()
-                print("Average Mean Absolute Error: " + str(sum(x) / len(x)))
-                print("Average Relative Absolute Error: " + str(sum(y) / len(y)))
-                print()
-                # ScatterPlot(np.array(x), "Mean Absolute Error", np.array(y), "Relative Absolute Error", reducedDataset.Preprocessor.dfName + " KNN Regression")
-
-
-
-        datasets = []
-#         reducedData = exObj.
 

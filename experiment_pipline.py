@@ -44,7 +44,7 @@ class experiment_pipeline:
 
         """     
         # remove missing values
-        cln_data = self.Preprocessor.df
+        cln_data = self.data
 
         # split into train/test and tune df's
         self.tune_df = cln_data.sample(frac=0.1,random_state=200)
@@ -186,10 +186,10 @@ class experiment_pipeline:
 
             #Separates ground truth column from training and test set
             train_response = train.iloc[:, self.index]
-            train.drop(self.index, axis=1, inplace=True)
+            train.drop(self.data.columns[[self.index]], axis=1, inplace=True)
 
             test_response = test.iloc[:, self.index]
-            test.drop(self.index, axis=1, inplace=True)
+            test.drop(self.data.columns[[self.index]], axis=1, inplace=True)
 
             knn = KNN(self.stratified_data, test, test_response, train, train_response, self.index)
             results.append(knn.knnRegular(k, self.isClassification, bandwidth))
@@ -200,6 +200,7 @@ class experiment_pipeline:
         full = pd.DataFrame()
         for j, fold in enumerate(self.stratified_data):
             full = full.append(fold)
+        print(full)
         knn = KNN(full, 0, 0, 0, 0, self.index)
         result = knn.knnEdited(k, self.isClassification, bandwidth, error)
         return result
@@ -208,9 +209,35 @@ class experiment_pipeline:
         full = pd.DataFrame()
         for j, fold in enumerate(self.stratified_data):
             full = full.append(fold)
+
         kMeans = KNN(full, 0,0,0,0,self.index)
         return kMeans.Kmeans(k, 100)
 
+    def crossvalidationknnregularKmeans(self, k, bandwidth, full):
+        results = []
+
+        #Iterates through each fold
+        for i in range(len(self.stratified_data)):
+            #Separates dataset into training and test datasets
+            train = pd.DataFrame()
+            test = pd.DataFrame()
+            for j, fold in enumerate(self.stratified_data):
+                if j == i:
+                    test = test.append(fold)
+                else:
+                    train = train.append(fold)
+
+            #Separates ground truth column from training and test set
+            train_response = train.iloc[:, self.index]
+            train.drop(self.data.columns[[self.index]], axis=1, inplace=True)
+
+            test_response = test.iloc[:, self.index]
+            test.drop(self.data.columns[[self.index]], axis=1, inplace=True)
+
+            knn = KNN(self.stratified_data, test, test_response, train, train_response, self.index)
+            results.append(knn.knnRegular(k, self.isClassification, bandwidth))
+
+        return results
 
 
 
