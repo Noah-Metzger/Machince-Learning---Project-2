@@ -77,17 +77,7 @@ class experiment_pipeline:
         parameter_matrix = []
         
         # Hyperparameter Ranges
-        k_range = []
-        input_k = 0 
-        for hp_k in range(5):
-            if self.num_classes % 2 == 0 and  hp_k == 0:
-                input_k = self.num_classes +1
-                k_range.append(input_k)
-            
-            else:
-                input_k += 2
-                k_range.append(input_k)
-            
+        k_range = [1,3,5,7,9]
         bandwidth = [0.25,0.5,1,5,10]        
         knn_model = KNN(self.cln_data,self.train_x,self.train_y,self.test_x,self.test_y, self.index)
         
@@ -136,15 +126,12 @@ class experiment_pipeline:
             return(parameter_matrix[min_index][1],parameter_matrix[min_index][2])
                      
 
-    def editedknn_tuning(self,k,bnd):
+    def editedknn_tuning(self):
         """
         Tunes hyperparameter error. Finds error value that returns a reduced dataset closest to 90% of orignal data
 
         Parameters
         ----------
-        k : k found from tunning()
-        bnd : bandwidth found from tunning() for regression problems
-
         Returns
         -------
         TYPE
@@ -152,15 +139,19 @@ class experiment_pipeline:
 
         """
         std = np.std(self.train_y)
-        print(std)
         error_vector = [(.1 * std),(.25 * std),(.5 * std),(.75 * std),std]
+        k_range = [1,3,5,7,9]
+        bandwidth = [0.25,0.5,1,5,10]  
         
         knn_model = KNN(self.cln_data,self.train_x,self.train_y,self.test_x,self.test_y,self.index)
         
         length_vec = []
-        for err in error_vector:
-            df = knn_model.knnEdited(k, self.isClassification, bnd, err)
-            length_vec.append([((df.shape[0] /self.data.shape[0]) - .9) , err])
+        for k in k_range:
+            for bnd in bandwidth:
+                for err in error_vector:                    
+                
+                    df = knn_model.knnEdited(k, self.isClassification, bnd, err)
+                    length_vec.append([df.shape[0], k,bnd,err])
         
         # find index of best performing hyperparameter
         tmp = []
@@ -168,7 +159,7 @@ class experiment_pipeline:
             tmp.append(g[0])        
         min_index = np.argmin(min)
         
-        return length_vec[min_index][1]
+        return (length_vec[min_index][1],length_vec[min_index][2],length_vec[min_index][3])
     
     def crossvalidationknnregular(self, k, bandwidth):
         results = []
@@ -238,19 +229,3 @@ class experiment_pipeline:
             results.append(knn.knnRegular(k, self.isClassification, bandwidth))
 
         return results
-
-
-
-
-# data = pd.read_csv("Data/breast-cancer-wisconsin.csv",header=None)
-#
-# ep = experiment_pipeline(data,False,10,10)
-#
-# ep.clean("name")
-#
-# #index = 8
-# #kn = KNN(ep.cln_data,ep.cln_data.drop(ep.cln_data.columns[[0, 8]],axis = 1),ep.cln_data[index],ep.tune_df.drop(ep.tune_df.columns[[0, 8]],axis = 1),ep.tune_df[index],index)
-# #kn.knnRegular(5, False, 2)
-# print(ep.editedknn_tuning(3, .25))
-# #ep.editedknn_tuning()
-#
