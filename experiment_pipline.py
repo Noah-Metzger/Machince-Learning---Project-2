@@ -8,15 +8,14 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class experiment_pipeline:
-    
-    def __init__(self, data, isClassification, index, nFold):
-        
+    def __init__(self, data, isClassification, index, nFold, prePro):
         self.data = data
         self.isClassification = isClassification
         self.index = index
         self.nFold = nFold
-        self.num_classes = len(np.unique(data[index]))
-        
+        self.num_classes = len(np.unique(prePro.df[prePro.df.columns[index]]))
+        self.Preprocessor = prePro
+
         
     # clean, Split into train/test and Tune, 
     # Tuning method
@@ -28,9 +27,9 @@ class experiment_pipeline:
     
     
     
-    def clean(self,name, prePro):
+    def clean(self):
         """
-        clean's raw data file, splits data into to tune & test/train of 10/ 90 percent. Builds a stratified dataset
+        clean's rxaw data file, splits data into to tune & test/train of 10/ 90 percent. Builds a stratified dataset
 
         Parameters
         ----------
@@ -45,17 +44,17 @@ class experiment_pipeline:
 
         """     
         # remove missing values
-        cln_data = prePro.df
-               
+        cln_data = self.data
+
         # split into train/test and tune df's
         self.tune_df = cln_data.sample(frac=0.1,random_state=200)
         self.cln_data = cln_data.drop(self.tune_df.index)
-        
+
         # split into train_x, train_y, test_x, test_y for tuning process
         self.train_x = self.cln_data.drop(self.cln_data.columns[[0,self.index]],axis = 1) ### watch out for zero!!!!!!!!!!
-        self.train_y = self.cln_data[self.index]
-        self.test_x = self.tune_df.drop(ep.tune_df.columns[[0, self.index]],axis = 1) ### watch out for zero!!!!!!!!!!!!
-        self.test_y = self.tune_df[self.index]
+        self.train_y = self.cln_data[self.cln_data.columns[self.index]]
+        self.test_x = self.tune_df.drop(self.tune_df.columns[[0, self.index]],axis = 1) ### watch out for zero!!!!!!!!!!!!
+        self.test_y = self.tune_df[self.cln_data.columns[self.index]]
         
         # initialize stratification object
         st = strat()
@@ -72,7 +71,7 @@ class experiment_pipeline:
 
         Returns
         -------
-        Array of parameters if classification returns k; if regression, returns k & bandwaidth
+        Array of parameters if classification returns k; if regression, returns k & bandwidth
 
         """
         parameter_matrix = []
@@ -80,7 +79,7 @@ class experiment_pipeline:
         # Hyperparameter Ranges
         k_range = [1,3,5,7,9]
         bandwidth = [0.25,0.5,1,5,10]        
-        knn_model = KNN(self.cln_data,self.train_x,self.train_y,self.test_x,self.test_y,self.index)
+        knn_model = KNN(self.cln_data,self.train_x,self.train_y,self.test_x,self.test_y, self.index)
         
         for k in k_range:
             
@@ -89,7 +88,7 @@ class experiment_pipeline:
                 prediction = knn_model.knnRegular(k,self.isClassification,bandwidth)
                 
                 # Evaluate Performance
-                ev = Evaluation(prediction[0],prediction[1],self.cln_data[self.index] )
+                ev = Evaluation(prediction[0],prediction[1],self.cln_data[self.cln_data.columns[self.index]] )
                 precision_list = ev.precision()
                 recall_list = ev.recall()
                 
@@ -110,9 +109,8 @@ class experiment_pipeline:
                     #print(bnd,k)   
                     prediction = knn_model.knnRegular(k,self.isClassification,bnd)
                     # Evaluate Performance
-                    ev = Evaluation(prediction[0],prediction[1],self.cln_data[self.index] )
-                                               
-                    parameter_matrix.append([ev.getAverageError(),k,bnd])
+                    ev = Evaluation(prediction[0],prediction[1],self.cln_data[self.cln_data.columns[self.index]] )
+                    parameter_matrix.append([ev.MeanAbsoluteError() + ev.RelativeAbsoluteError(),k,bnd])
         
         # find index of best performing hyperparameter
         tmp = []
@@ -123,7 +121,6 @@ class experiment_pipeline:
         min_index = np.argmin(min)
         
         if(self.isClassification):
-            
             return(parameter_matrix[max_index][1])
         else:
             return(parameter_matrix[min_index][1],parameter_matrix[min_index][2])
@@ -164,9 +161,9 @@ class experiment_pipeline:
         
         return (length_vec[min_index][1],length_vec[min_index][2],length_vec[min_index][3])
     
-    def crossvalidation(self,func,index):
+    def crossvalidationknnregular(self, k, bandwidth):
         results = []
-        
+
         #Iterates through each fold
         for i in range(len(self.stratified_data)):
             #Separates dataset into training and test datasets
@@ -180,25 +177,55 @@ class experiment_pipeline:
 
             #Separates ground truth column from training and test set
             train_response = train.iloc[:, self.index]
-            train.drop(self.index, axis=1, inplace=True)
+            train.drop(self.data.columns[[self.index]], axis=1, inplace=True)
 
             test_response = test.iloc[:, self.index]
-            test.drop(self.index, axis=1, inplace=True)
+            test.drop(self.data.columns[[self.index]], axis=1, inplace=True)
 
-            results.append(func(train, train_response, test, test_response))
+            knn = KNN(self.stratified_data, test, test_response, train, train_response, self.index)
+            results.append(knn.knnRegular(k, self.isClassification, bandwidth))
 
         return results
-    
-data = pd.read_csv("Data/breast-cancer-wisconsin.csv",header=None)
-#
-ep = experiment_pipeline(data,True,10,10)
-#
-pre = Preprocessor(data, 10, "ame")
-ep.clean("name",pre)
-#
-# #index = 8
-# #kn = KNN(ep.cln_data,ep.cln_data.drop(ep.cln_data.columns[[0, 8]],axis = 1),ep.cln_data[index],ep.tune_df.drop(ep.tune_df.columns[[0, 8]],axis = 1),ep.tune_df[index],index)
-# #kn.knnRegular(5, False, 2)
-# print(ep.editedknn_tuning(3, .25))
-ep.editedknn_tuning()
-#
+
+    def editedknn(self, k, bandwidth, error):
+        full = pd.DataFrame()
+        for j, fold in enumerate(self.stratified_data):
+            full = full.append(fold)
+        print(full)
+        knn = KNN(full, 0, 0, 0, 0, self.index)
+        result = knn.knnEdited(k, self.isClassification, bandwidth, error)
+        return result
+
+    def kMeans(self, k):
+        full = pd.DataFrame()
+        for j, fold in enumerate(self.stratified_data):
+            full = full.append(fold)
+
+        kMeans = KNN(full, 0,0,0,0,self.index)
+        return kMeans.Kmeans(k, 100)
+
+    def crossvalidationknnregularKmeans(self, k, bandwidth, full):
+        results = []
+
+        #Iterates through each fold
+        for i in range(len(self.stratified_data)):
+            #Separates dataset into training and test datasets
+            train = pd.DataFrame()
+            test = pd.DataFrame()
+            for j, fold in enumerate(self.stratified_data):
+                if j == i:
+                    test = test.append(fold)
+                else:
+                    train = train.append(fold)
+
+            #Separates ground truth column from training and test set
+            train_response = train.iloc[:, self.index]
+            train.drop(self.data.columns[[self.index]], axis=1, inplace=True)
+
+            test_response = test.iloc[:, self.index]
+            test.drop(self.data.columns[[self.index]], axis=1, inplace=True)
+
+            knn = KNN(self.stratified_data, test, test_response, train, train_response, self.index)
+            results.append(knn.knnRegular(k, self.isClassification, bandwidth))
+
+        return results
