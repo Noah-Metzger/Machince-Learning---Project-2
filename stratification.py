@@ -23,7 +23,6 @@ class strat:
         """
         
         stratified_data = []
-        
         split_data = self.split(data,index)
         
         for i,df in enumerate(split_data): # Splits each class dataset into Nfolds
@@ -40,7 +39,10 @@ class strat:
                 tmp = tmp.append(y[z])
             
             stratified_data[z] = tmp
-            
+
+        # print("Stratified Data")
+        # print(stratified_data)
+
         return stratified_data
         
     def stratification_regression(self,data,index,nFold):

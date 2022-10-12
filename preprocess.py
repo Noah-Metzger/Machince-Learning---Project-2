@@ -88,6 +88,12 @@ class Preprocessor:
                             self.df[col][index] = self.df[col][index - 1]
 
     def labelencodeOridinal(self, colIndex, order):
+        """
+        Label encodes features in a specific order
+
+        :param colIndex: Index of feature
+        :param order: Array of uniques values contained within the feature in order
+        """
         col = self.df.columns[colIndex]
         #Replaces the value with its index of the value in the unique values array
         for index, value in self.df[col].items():
@@ -120,30 +126,54 @@ class Preprocessor:
         """
         One hot encodes all categorical attributes
         """
-        # Makes a list of all unique the values in each column
-        addedFeatures = 0
-        for l in columnArray:
-            col = self.df.columns[l]
-            labels = []
-            for index, value in self.df[col].items():
-                isDup = False
-                for i in labels:
-                    if i == value:
-                        isDup = True
-                if not isDup:
-                    labels.append(value)
-                #Inserts a column for each unique value and inserts a 1 for each occurrance of that value and all else 0's
-            for i in labels:
-                temp = np.zeros(self.df[col].size)
-                for index, value in self.df[col].items():
-                    if i == value:
-                        temp[index] = 1
-                self.df.insert(l, i, temp)
-            oldindex = (l + len(labels) + addedFeatures)
-            self.df.drop(self.df.columns[[oldindex]], axis=1, inplace=True)
-            addedFeatures += len(labels) - 1
-            self.truthColIndex += len(labels) - 1
 
+        #Make a list of column labels to be encoded
+        columnLabels = []
+        for l in columnArray:
+            columnLabels.append(self.df.columns[l])
+
+
+        columnTracker = 0
+        insertPointer = 0
+        columns = self.df.columns
+        newDataframe = pd.DataFrame()
+
+        #Iterate through each feature
+        for i, col in enumerate(columns):
+            #If column is desired to be encoded
+            if columnLabels[columnTracker] == col:
+                if columnTracker + 1 < len(columnLabels):
+                    columnTracker += 1
+                newCols = []
+                unique = np.unique(self.df[col])
+                #Creates a new feature for each column and sets its corresponding values to 0 otherwise 1
+                for index, label in enumerate(unique):
+                    freshcol = np.zeros(len(self.df[col]))
+                    for colIndex, old in enumerate(self.df[col]):
+                        if label == old:
+                            freshcol[colIndex] = 1
+                    newCols.append(freshcol)
+                    self.truthColIndex += 1
+                #Sets a pointers to point to the next column index to be inserted into.
+                #Inserts new features into fresh dataframe
+                for nameIndex, onezero in enumerate(newCols):
+                    newDataframe.insert(insertPointer, (str(col) + "_" + str(nameIndex)), onezero)
+                    insertPointer += 1
+                self.truthColIndex -= 1
+            else:
+                #Copy feature over to fresh dataframe
+                res = np.array(self.df[col])
+                newDataframe.insert(insertPointer, col, res)
+                insertPointer += 1
+
+        self.df = newDataframe
+
+    def onehotencodeAll(self):
+        """
+        One hot encodes all features except for the last one.
+        """
+        columns = list(range(0, len(self.df.columns) - 1))
+        self.onehotencoding(columns)
 
     def binning(self, columns, BIN_NUMBER):
         """

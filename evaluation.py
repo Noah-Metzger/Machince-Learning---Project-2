@@ -41,13 +41,14 @@ class Evaluation:
         for i in range(len(self.truth)):
             meanTruth += self.truth[i]
         meanTruth /= len(self.truth)
-
+        # print(meanTruth)
         nom = 0
         dom = 0
         for i in range(len(self.pred)):
             nom += abs(self.pred[i] - self.truth[i])
-            nom += abs(self.pred[i] - meanTruth)
+            dom += abs(self.pred[i] - meanTruth)
         errorSum = nom/dom
+        # print(nom, dom)
         if dom == 0:
             errorSum = 0
         return errorSum

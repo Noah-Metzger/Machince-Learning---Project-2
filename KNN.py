@@ -34,10 +34,31 @@ class KNN:
         :return: L_p norm distance between two points
         """
 
+        # print("lpNorm")
+        # print(x)
+        # print(y)
         sums = 0
         for i in range(len(x)):
             sums += pow(float(x[i]) - float(y[i]), p)
+        # print(pow(sums, (1 / p)))
         return pow(sums, (1 / p))
+
+    def hammingDistance(self, x, y):
+        """
+        Helper method that calculates the Hamming distance of two points.  Configured to also work with a label encoded truth column.
+
+        :param x: A numpy array, Python list or Pandas Series containing one of two point to have there distance measured.
+        :param y: A numpy array, Python list or Pandas Series containing one of two point to have there distance measured.
+        :return: Hamming distance
+        """
+        # print("Hamming distance")
+        # print(x)
+        # print(y)
+        sums = 0
+        for i in range(len(x)):
+            sums += abs(float(x[i]) - float(y[i]))
+        # print(sums)
+        return sums
 
     def RBF(self, x, y, sigma):
         """
@@ -48,9 +69,12 @@ class KNN:
         :param sigma: Bandwidth of the kernel function
         :return: RBF distance
         """
+        # print("RBF")
+        # print(x)
+        # print(y)
         r = 1 / (2 * sigma)
         out = math.exp(-r * self.lpNorm(x, y, 2))
-#         print(out)
+        # print(out)
         return out
 
     def predictInstance(self, k, testInstance, testTruth, trainingSet, trainingTruth, isClassification, bandwidth, isEditedKNN, error):
@@ -72,7 +96,11 @@ class KNN:
         indices = []
         #Iterate through all the instances in the training set and record there distance from the test instance, class or value, and index in the dataframe
         for i, row in trainingSet.iterrows():
-            dist = self.lpNorm(np.array(row), np.array(testInstance), 2)
+            if isClassification:
+                dist = self.hammingDistance(np.array(row), np.array(testInstance))
+            else:
+                # dist = self.RBF(np.array(row), np.array(testInstance), bandwidth)
+                dist = self.lpNorm(np.array(row), np.array(testInstance), 2)
             neighbors.append(dist)
             classes.append(trainingTruth[i])
             indices.append(i)
@@ -88,6 +116,13 @@ class KNN:
         #Reduce the distance and index array to only contain the k-nearest neighbors
         nearestNeighbors = classes[:k]
         nearestIndices = indices[:k]
+
+        # print("k-nearest neigbors distances")
+        # print(nearestNeighbors)
+        #
+        # print("k-nearest neigbors class/value")
+        # for i in nearestIndices:
+        #     print(trainingTruth[i])
 
         #If is classification problem
         if isClassification:
@@ -121,15 +156,17 @@ class KNN:
                 kern = self.RBF(np.array(trainingSet.loc[i]), np.array(testInstance), bandwidth)
                 nom += kern * trainingTruth[i]
                 dom += kern
-            predictedValue = (nom / dom)
             if dom == 0:
                 predictedValue = 0
+            else:
+                predictedValue = (nom / dom)
             #If edited KNN problem
             if isEditedKNN:
                 #if predicted value
                 isWithinError = False
                 if abs(predictedValue-testTruth) < error:
                     isWithinError = True
+                    # print(abs(predictedValue - testTruth))
                 return [predictedValue, isWithinError]
 
             return predictedValue
@@ -138,16 +175,20 @@ class KNN:
         """
         Normal KNN algoritm for both classification and regression
 
+        :param: number of neighbors to use.
         :param isClassification: Whether problem is classification or regression.
-        :param bandwidth: Bandwidth for the kernel function
+        :param bandwidth: Bandwidth for the kernel function.
         :return: Two arrays, first the predicted values or classes and the second truth values or classes
         """
         truth = []
         predictions = []
+        # print(self.test)
         #Iterate through each instance in a test set and run KNN
         for i, testRow in self.test.iterrows():
-            predictions.append(self.predictInstance(k, testRow, self.test_y[i], self.train, self.train_y,isClassification, bandwidth, False, 0))
+
+            predictions.append(self.predictInstance(k, testRow, self.test_y[i], self.train, self.train_y, isClassification, bandwidth, False, 0))
             truth.append(self.test_y[i])
+        # print(predictions)
         return [predictions, truth]
 
     def knnEdited(self, k, isClassification, bandwidth, error):
@@ -178,7 +219,13 @@ class KNN:
 #                 print(predictedResponse, isClassification)
                 #If predicted class/value incorrect then remove instance from the dataset, and continue the loop to the next dataset
                 if not predictedResponse[1]:
+                    # print("Deleting instances")
+                    # print(df)
+                    # print("Removing instance")
+                    # print(df.iloc[i])
+                    # print()
                     df = df.drop([i])
+                    # print(df)
                     isPerformanceIncreasing = True
 
                 #To evaluate preformance of algorithm to determine if it is time to stop loop
@@ -209,12 +256,13 @@ class KNN:
             prevProformance = newPreformance
         return df
 
-    def Kmeans(self, k, maxIter):
+    def Kmeans(self, k, maxIter, isClassification):
         """
         K-Means algorithm
 
         :param k: Number of clusters
         :param maxIter: Maximum number of iterations
+        :param isClassification: Boolean whether or not problem is classification problem
         :return: Array of classes
         """
 
@@ -235,7 +283,18 @@ class KNN:
                 dist = []
                 for center in centers:
                     # print(np.array(row), np.array(center))
-                    dist.append(self.lpNorm(np.array(row), np.array(center), 2))
+                    if isClassification:
+                        dist = self.hammingDistance(np.array(row), np.array(center))
+                    else:
+                        dist = self.lpNorm(np.array(row), np.array(center), 2)
+
+                # print("Binning point in cluster")
+                # print("distances to centroid")
+                # print(np.array(dist))
+                # print("Closest centroid to new point")
+                # print(np.argmin(np.array(dist)))
+                # print("index of new binned point")
+                # print(i)
                 binn[np.argmin(np.array(dist))].append(i)
             finalClusters = binn
             #Finds the average point for each cluster and assigns the average point as the new cluster centers
@@ -252,12 +311,4 @@ class KNN:
                         avgInst[i] = 0
                 centers[index] = avgInst
 
-        #once loop complete, return array of cluster centeriods.
-        output = []
-        for i, cluster in enumerate(finalClusters):
-            temp = pd.DataFrame()
-            for j in cluster:
-                temp = temp.append(self.df.loc[j])
-            output.append(temp)
-
-        return output
+        return pd.DataFrame(centers)
